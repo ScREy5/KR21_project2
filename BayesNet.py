@@ -6,6 +6,7 @@ import math
 import itertools
 import pandas as pd
 from copy import deepcopy
+import numpy as np
 
 
 class BayesNet:
@@ -18,7 +19,7 @@ class BayesNet:
     def create_bn(self, variables: List[str], edges: List[Tuple[str, str]], cpts: Dict[str, pd.DataFrame]) -> None:
         """
         Creates the BN according to the python objects passed in.
-        
+
         :param variables: List of names of the variables.
         :param edges: List of the directed edges.
         :param cpts: Dictionary of conditional probability tables.
@@ -50,8 +51,9 @@ class BayesNet:
         # iterating through vars
         for key, values in bif_reader.get_values().items():
             values = values.transpose().flatten()
+            values = np.flipud(values) #!!!!for changing the order
             n_vars = int(math.log2(len(values)))
-            worlds = [list(i) for i in itertools.product([False, True], repeat=n_vars)]
+            worlds = [list(i) for i in itertools.product([True, False], repeat=n_vars)] #!!!changed from false,true -> true,false
             # create empty array
             cpt = []
             # iterating through worlds within a variable
@@ -66,16 +68,16 @@ class BayesNet:
             columns.append(key)
             columns.append('p')
             cpts[key] = pd.DataFrame(cpt, columns=columns)
-        
+
         # load vars
         variables = bif_reader.get_variables()
-        
+
         # load edges
         edges = bif_reader.get_edges()
 
         self.create_bn(variables, edges, cpts)
 
-    # METHODS THAT MIGHT ME USEFUL -------------------------------------------------------------------------------------
+    # METHODS THAT MIGHT BE USEFUL -------------------------------------------------------------------------------------
 
     def get_children(self, variable: str) -> List[str]:
         """
@@ -84,6 +86,14 @@ class BayesNet:
         :return: List of children
         """
         return [c for c in self.structure.successors(variable)]
+
+    def get_parent(self, variable: str) -> List[str]:
+        """
+        Returns the parent of the variable in the graph.
+        :param variable: Variable to get the parent from
+        :return: List of parent
+        """
+        return [c for c in self.structure.predecessors(variable)]
 
     def get_cpt(self, variable: str) -> pd.DataFrame:
         """
@@ -137,7 +147,7 @@ class BayesNet:
         """
         Get all the entries of a CPT which are compatible with the instantiation.
 
-        :param instantiation: a series of assignments as tuples. E.g.: pd.Series(("A", True), ("B", False))
+        :param instantiation: a series of assignments as sets. E.g.: pd.Series({"Sprinkler?":True,"Rain?":True})
         :param cpt: cpt to be filtered
         :return: table with compatible instantiations and their probability value
         """
