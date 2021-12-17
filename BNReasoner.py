@@ -7,6 +7,8 @@ from copy import deepcopy
 import pandas as pd
 import itertools
 
+pd.options.mode.chained_assignment = None
+
 class BNReasoner:
     def __init__(self, net: Union[str, BayesNet]):
         """
@@ -157,20 +159,25 @@ class BNReasoner:
         """CHAIN RULING"""
         for i in range(len(worlds)):
             value = 1
-            # print(permutations[i])
+            # print(worlds[i])
             for var in all_var:
+
                 prob = self.bn.get_compatible_instantiations_table(pd.Series(worlds[i]), all_cpt[var])['p'].max()
-                print(prob)
+                # print(self.bn.get_compatible_instantiations_table(pd.Series(worlds[i]), all_cpt[var]))
+                # print(prob)
                 value *= prob
                 # print(value)
+            # print(i+1,value)
             permutations[i].append(value)
-            print(permutations[i])
+            # print(permutations[i])
 
         """CREATE JOINT PROBABILITY TABLE"""
         columns = []
         columns.extend(all_var)
         columns.append('p')
         jpt = pd.DataFrame(permutations, columns=columns)
+        """ OMIT ZEROES"""
+        jpt = jpt.loc[jpt['p'] > 0]
         return jpt
 
 
@@ -481,10 +488,23 @@ class BNReasoner:
                     to_multi.append(cpt)
                     l_cpts = [k for k in l_cpts if not k.equals(cpt)] # remove cpt from list
             mfactor = self.multiply_factors(to_multi)
-            maxfactor = self.max_out(mfactor,variable)
-            l_cpts.append(maxfactor)
+            if variable in mapvar:
+                maxfactor = self.max_out(mfactor,variable)
+                l_cpts.append(maxfactor)
+            else:
+                sfactor = self.sum_out(mfactor,variable)
+                l_cpts.append(sfactor)
+        map = self.multiply_factors(l_cpts)
+        """PR Norm"""
+        varnames = [i for i in instantiation.index]
+        order = self.rand_ordering(varnames)
+        prnorm = self.prior_margin(varnames, order)
+        prnorm = self.bn.get_compatible_instantiations_table(instantiation, prnorm)
+        i = 0
+        for pr in map['p']:
+            map['p'][i] = pr/prnorm['p']
+            i += 1
         """GET THE MAX"""
-        mpe = self.multiply_factors(l_cpts)
-        mpe = mpe.sort_values(by=['p'], ascending=False)
-        mpe = mpe.head(1)
-        return mpe
+        map = map.sort_values(by=['p'], ascending=False)
+        map = map.head(1)
+        return map

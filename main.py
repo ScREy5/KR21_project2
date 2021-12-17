@@ -3,7 +3,8 @@ from BayesNet import *
 
 
 # PGM = BNReasoner('testing/lecture_example.BIFXML')
-PGM = BNReasoner('testing/new_lecture.BIFXML')
+# PGM = BNReasoner('testing/new_lecture.BIFXML')
+PGM = BNReasoner('testing/lecture_example2.BIFXML')
 # PGM.bn.draw_structure()
 all_var = PGM.bn.get_all_variables()
 print(all_var)
@@ -19,8 +20,8 @@ all_cpt = PGM.bn.get_all_cpts()
 # print(nx.d_separated(PGM.bn.structure,{'family-out'},{'bowel-problem'},{}))
 
 """TEST FOR JPT AND SUM_OUT"""
-jpt = PGM.jpt_by_chain()
-pp.pprint(jpt)
+# jpt = PGM.jpt_by_chain()
+# pp.pprint(jpt)
 # # ["Winter?","Sprinkler?","Rain?"]
 # cpt1 = PGM.sum_out(jpt,["Winter?"])
 # cpt2 = PGM.sum_out(jpt,["Winter?","Sprinkler?","Rain?"])
@@ -65,6 +66,18 @@ pp.pprint(jpt)
 # cpt1 = PGM.max_out(jpt,["Winter?","Sprinkler?","Rain?","Wet Grass?","Slippery Road?"])
 # print(cpt1)
 """TEST FOR MPE"""
-# mpe = PGM.MPE(pd.Series({}))
-# print(mpe)
-"""TEST FOR MAP"""
+# mpe = PGM.MPE(pd.Series({"A":True}))
+# print("MPE\n",mpe)
+"""TEST FOR MAP Lecture ex1"""
+# map = PGM.MAP(["S","C"],pd.Series({"A":True}))
+# print("MAP\n",map)
+"""TEST FOR MAP Lecture ex2"""
+map = PGM.MAP(["I","J"],pd.Series({"O":True}))
+print("MAP\n",map)
+"""TEST FOR POST Lecture ex2"""
+IJ = ["I","J"]
+# pd.Series({"Sprinkler?":True,"Rain?":True,"Winter?":True,"Wet Grass?":True})
+inst = pd.Series({"O":True})
+order = PGM.rand_ordering(IJ)
+postIJ = PGM.post_margin(IJ,inst,order)
+print(postIJ)
